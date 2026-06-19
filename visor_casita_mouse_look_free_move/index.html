@@ -15,7 +15,7 @@
       </div>
       <div class="status">
         <span id="statusDot" class="dot loading"></span>
-        <strong id="message">Cargando modelo...</strong>
+        <strong id="message">Cargando motor 3D...</strong>
       </div>
     </header>
 
@@ -25,12 +25,12 @@
       <div id="loader" class="loader">
         <div class="spinner"></div>
         <h2>Cargando casa 3D</h2>
-        <p>Aplicando colores, materiales, luces y cámara...</p>
+        <p>Preparando versión compatible con TV...</p>
       </div>
 
       <div id="errorBox" class="errorBox hidden">
         <h2>No se pudo cargar el modelo</h2>
-        <p>Revisa que exista <strong>models/Casa_mejor.glb</strong> y que abras la página con servidor.</p>
+        <p>Si estás en Smart TV, puede que el navegador no soporte WebGL/Three.js. Prueba con laptop por HDMI o duplicar pantalla.</p>
       </div>
 
       <div class="controls">
@@ -44,26 +44,32 @@
 
       <div class="hud">
         <span>Clic en el visor: mirar con mouse</span>
-        <span>ESC: salir de mirada mouse</span>
+        <span>ESC: salir</span>
         <span>WASD/Flechas: caminar</span>
       </div>
     </section>
 
     <section class="info">
-      <article><strong>Colores corregidos</strong><span>El visor aplica materiales web porque el GLB venía sin imágenes/texturas incrustadas.</span></article>
+      <article><strong>Modo TV</strong><span>Sin importmap; carga librerías con CDN ESM directo.</span></article>
       <article><strong>Modelo fijo</strong><span>Carga automáticamente solo <b>Casa_mejor.glb</b>.</span></article>
-      <article><strong>Listo para hosting</strong><span>Sube todos los archivos conservando la carpeta <b>models</b>.</span></article>
+      <article><strong>Hosting activo</strong><span>Compatible con GitHub Pages.</span></article>
     </section>
   </main>
 
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
-        "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/"
-      }
-    }
-  </script>
   <script type="module" src="app.js"></script>
+  <script>
+    setTimeout(function(){
+      var m = document.getElementById('message');
+      var box = document.getElementById('errorBox');
+      var loader = document.getElementById('loader');
+      var dot = document.getElementById('statusDot');
+      if (m && /Cargando/.test(m.textContent)) {
+        m.textContent = 'La TV no pudo cargar el motor 3D o el modelo.';
+        if (box) box.classList.remove('hidden');
+        if (loader) loader.classList.add('hidden');
+        if (dot) dot.classList.add('error');
+      }
+    }, 30000);
+  </script>
 </body>
 </html>
