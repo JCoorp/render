@@ -10,7 +10,8 @@ def arg(flag, default):
 
 OUT=os.path.abspath(arg("--output", os.path.join(os.getcwd(),"output")))
 os.makedirs(OUT, exist_ok=True)
-HDRI=os.path.join(OUT,"stadium_01_1k.hdr")\nHDRI_URL="https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/stadium_01_1k.hdr"
+HDRI=os.path.join(OUT,"stadium_01_1k.hdr")
+HDRI_URL="https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/stadium_01_1k.hdr"
 
 # ------------------------------------------------------------
 # HDRI real en formato Radiance RGBE
@@ -218,6 +219,12 @@ def maze():
     render(sc,c,(16,14,8),(0,1,1),'08_laberinto_salida.png',52)
     save(path)
 
-make_hdri(HDRI)
+try:
+    print("Descargando HDRI fotografica CC0 de Poly Haven...")
+    urllib.request.urlretrieve(HDRI_URL,HDRI)
+    print("HDRI descargada",HDRI,os.path.getsize(HDRI),"bytes")
+except Exception as e:
+    print("No se pudo descargar HDRI fotografica; se usara HDRI sintetica:",e)
+    make_hdri(HDRI)
 practice(); maze()
 print("LISTO", sorted(os.listdir(OUT)))
