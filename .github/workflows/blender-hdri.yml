@@ -1,0 +1,31 @@
+name: Generar actividad Blender HDRI
+on:
+  push:
+    branches: [actividad-blender-hdri-20261001]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar Blender
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y blender
+          blender --version
+      - name: Generar blends y evidencias
+        run: |
+          mkdir -p blender_hdri_activity/output
+          blender --background --python blender_hdri_activity/generar.py -- --output blender_hdri_activity/output
+          ls -lh blender_hdri_activity/output
+      - name: Empaquetar entrega
+        run: |
+          cd blender_hdri_activity/output
+          zip -9 -r ../../actividad_blender_hdri_entrega.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: actividad_blender_hdri_entrega
+          path: actividad_blender_hdri_entrega.zip
+          if-no-files-found: error
