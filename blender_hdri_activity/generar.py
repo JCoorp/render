@@ -200,8 +200,8 @@ def material_concreto(name='Concreto_Rugoso'):
     tex=nt.nodes.new('ShaderNodeTexNoise'); tex.location=(-360,30)
     inp(tex,'Scale',5.0); inp(tex,'Detail',7.0); inp(tex,'Roughness',.78)
     ramp=nt.nodes.new('ShaderNodeValToRGB'); ramp.location=(-100,90)
-    ramp.color_ramp.elements[0].color=(.075,.085,.095,1)
-    ramp.color_ramp.elements[1].color=(.38,.42,.45,1)
+    ramp.color_ramp.elements[0].color=(.12,.08,.025,1)
+    ramp.color_ramp.elements[1].color=(.95,.62,.12,1)
     bump=nt.nodes.new('ShaderNodeBump'); bump.location=(110,-120)
     inp(bump,'Strength',.38); inp(bump,'Distance',.22)
     tc=nt.nodes.new('ShaderNodeTexCoord'); tc.location=(-600,30)
@@ -223,8 +223,8 @@ def material_madera(name='Madera_Veteada'):
     wave.wave_type='BANDS'; wave.bands_direction='X'
     inp(wave,'Scale',3.7); inp(wave,'Distortion',7.0); inp(wave,'Detail',5.0); inp(wave,'Detail Scale',2.0)
     ramp=nt.nodes.new('ShaderNodeValToRGB'); ramp.location=(-80,70)
-    ramp.color_ramp.elements[0].color=(.055,.012,.004,1)
-    ramp.color_ramp.elements[1].color=(.48,.16,.035,1)
+    ramp.color_ramp.elements[0].color=(.12,.018,.004,1)
+    ramp.color_ramp.elements[1].color=(.95,.26,.035,1)
     bump=nt.nodes.new('ShaderNodeBump'); bump.location=(130,-120)
     inp(bump,'Strength',.24); inp(bump,'Distance',.10)
     tc=nt.nodes.new('ShaderNodeTexCoord'); tc.location=(-580,40)
@@ -237,7 +237,7 @@ def material_madera(name='Madera_Veteada'):
     return m
 
 def material_metal(name='Metal_Pulido'):
-    return principled(name,(.055,.09,.16,1),.96,.16)
+    return principled(name,(.02,.32,.95,1),.96,.12)
 
 def material_ladrillo(name='Ladrillo'):
     m=bpy.data.materials.new(name); m.use_nodes=True
@@ -246,7 +246,7 @@ def material_ladrillo(name='Ladrillo'):
     bs=nt.nodes.new('ShaderNodeBsdfPrincipled'); bs.location=(380,0)
     inp(bs,'Roughness',.72)
     brick=nt.nodes.new('ShaderNodeTexBrick'); brick.location=(-300,30)
-    inp(brick,'Color1',(.34,.035,.012,1)); inp(brick,'Color2',(.62,.105,.025,1)); inp(brick,'Mortar',(.025,.025,.025,1))
+    inp(brick,'Color1',(.55,.006,.006,1)); inp(brick,'Color2',(1.0,.055,.01,1)); inp(brick,'Mortar',(.055,.012,.012,1))
     inp(brick,'Scale',7.0); inp(brick,'Mortar Size',.035)
     bump=nt.nodes.new('ShaderNodeBump'); bump.location=(130,-110)
     inp(bump,'Strength',.30); inp(bump,'Distance',.16)
