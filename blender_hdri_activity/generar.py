@@ -190,33 +190,177 @@ def maze_data(w=9,h=7,seed=33):
         d,dx,dy,rv,nx,ny=random.choice(op); W[(x,y)][d]=0; W[(nx,ny)][rv]=0; vis.add((nx,ny)); st.append((nx,ny))
     W[(0,0)]['W']=0; W[(w-1,h-1)]['E']=0; return W
 
+
+def material_concreto(name='Concreto_Rugoso'):
+    m=bpy.data.materials.new(name); m.use_nodes=True
+    nt=m.node_tree; nt.nodes.clear()
+    out=nt.nodes.new('ShaderNodeOutputMaterial'); out.location=(620,0)
+    bs=nt.nodes.new('ShaderNodeBsdfPrincipled'); bs.location=(360,0)
+    inp(bs,'Roughness',.82); inp(bs,'Metallic',0.0)
+    tex=nt.nodes.new('ShaderNodeTexNoise'); tex.location=(-360,30)
+    inp(tex,'Scale',5.0); inp(tex,'Detail',7.0); inp(tex,'Roughness',.78)
+    ramp=nt.nodes.new('ShaderNodeValToRGB'); ramp.location=(-100,90)
+    ramp.color_ramp.elements[0].color=(.075,.085,.095,1)
+    ramp.color_ramp.elements[1].color=(.38,.42,.45,1)
+    bump=nt.nodes.new('ShaderNodeBump'); bump.location=(110,-120)
+    inp(bump,'Strength',.38); inp(bump,'Distance',.22)
+    tc=nt.nodes.new('ShaderNodeTexCoord'); tc.location=(-600,30)
+    nt.links.new(tc.outputs['Generated'],tex.inputs['Vector'])
+    nt.links.new(tex.outputs['Fac'],ramp.inputs['Fac'])
+    nt.links.new(ramp.outputs['Color'],bs.inputs['Base Color'])
+    nt.links.new(tex.outputs['Fac'],bump.inputs['Height'])
+    nt.links.new(bump.outputs['Normal'],bs.inputs['Normal'])
+    nt.links.new(bs.outputs['BSDF'],out.inputs['Surface'])
+    return m
+
+def material_madera(name='Madera_Veteada'):
+    m=bpy.data.materials.new(name); m.use_nodes=True
+    nt=m.node_tree; nt.nodes.clear()
+    out=nt.nodes.new('ShaderNodeOutputMaterial'); out.location=(640,0)
+    bs=nt.nodes.new('ShaderNodeBsdfPrincipled'); bs.location=(380,0)
+    inp(bs,'Roughness',.42); inp(bs,'Metallic',0.0)
+    wave=nt.nodes.new('ShaderNodeTexWave'); wave.location=(-330,40)
+    wave.wave_type='BANDS'; wave.bands_direction='X'
+    inp(wave,'Scale',3.7); inp(wave,'Distortion',7.0); inp(wave,'Detail',5.0); inp(wave,'Detail Scale',2.0)
+    ramp=nt.nodes.new('ShaderNodeValToRGB'); ramp.location=(-80,70)
+    ramp.color_ramp.elements[0].color=(.055,.012,.004,1)
+    ramp.color_ramp.elements[1].color=(.48,.16,.035,1)
+    bump=nt.nodes.new('ShaderNodeBump'); bump.location=(130,-120)
+    inp(bump,'Strength',.24); inp(bump,'Distance',.10)
+    tc=nt.nodes.new('ShaderNodeTexCoord'); tc.location=(-580,40)
+    nt.links.new(tc.outputs['Generated'],wave.inputs['Vector'])
+    nt.links.new(wave.outputs['Color'],ramp.inputs['Fac'])
+    nt.links.new(ramp.outputs['Color'],bs.inputs['Base Color'])
+    nt.links.new(wave.outputs['Fac'],bump.inputs['Height'])
+    nt.links.new(bump.outputs['Normal'],bs.inputs['Normal'])
+    nt.links.new(bs.outputs['BSDF'],out.inputs['Surface'])
+    return m
+
+def material_metal(name='Metal_Pulido'):
+    return principled(name,(.055,.09,.16,1),.96,.16)
+
+def material_ladrillo(name='Ladrillo'):
+    m=bpy.data.materials.new(name); m.use_nodes=True
+    nt=m.node_tree; nt.nodes.clear()
+    out=nt.nodes.new('ShaderNodeOutputMaterial'); out.location=(640,0)
+    bs=nt.nodes.new('ShaderNodeBsdfPrincipled'); bs.location=(380,0)
+    inp(bs,'Roughness',.72)
+    brick=nt.nodes.new('ShaderNodeTexBrick'); brick.location=(-300,30)
+    inp(brick,'Color1',(.34,.035,.012,1)); inp(brick,'Color2',(.62,.105,.025,1)); inp(brick,'Mortar',(.025,.025,.025,1))
+    inp(brick,'Scale',7.0); inp(brick,'Mortar Size',.035)
+    bump=nt.nodes.new('ShaderNodeBump'); bump.location=(130,-110)
+    inp(bump,'Strength',.30); inp(bump,'Distance',.16)
+    tc=nt.nodes.new('ShaderNodeTexCoord'); tc.location=(-560,30)
+    nt.links.new(tc.outputs['Generated'],brick.inputs['Vector'])
+    nt.links.new(brick.outputs['Color'],bs.inputs['Base Color'])
+    nt.links.new(brick.outputs['Fac'],bump.inputs['Height'])
+    nt.links.new(bump.outputs['Normal'],bs.inputs['Normal'])
+    nt.links.new(bs.outputs['BSDF'],out.inputs['Surface'])
+    return m
+
+def material_marmol(name='Marmol'):
+    m=bpy.data.materials.new(name); m.use_nodes=True
+    nt=m.node_tree; nt.nodes.clear()
+    out=nt.nodes.new('ShaderNodeOutputMaterial'); out.location=(640,0)
+    bs=nt.nodes.new('ShaderNodeBsdfPrincipled'); bs.location=(380,0)
+    inp(bs,'Roughness',.24); inp(bs,'Metallic',.05)
+    noise=nt.nodes.new('ShaderNodeTexNoise'); noise.location=(-350,20)
+    inp(noise,'Scale',3.0); inp(noise,'Detail',9.0); inp(noise,'Roughness',.72); inp(noise,'Distortion',2.8)
+    ramp=nt.nodes.new('ShaderNodeValToRGB'); ramp.location=(-80,80)
+    ramp.color_ramp.elements[0].position=.33
+    ramp.color_ramp.elements[0].color=(.018,.025,.04,1)
+    ramp.color_ramp.elements[1].position=.62
+    ramp.color_ramp.elements[1].color=(.92,.95,1.0,1)
+    bump=nt.nodes.new('ShaderNodeBump'); bump.location=(130,-120)
+    inp(bump,'Strength',.12); inp(bump,'Distance',.06)
+    tc=nt.nodes.new('ShaderNodeTexCoord'); tc.location=(-590,20)
+    nt.links.new(tc.outputs['Generated'],noise.inputs['Vector'])
+    nt.links.new(noise.outputs['Fac'],ramp.inputs['Fac'])
+    nt.links.new(ramp.outputs['Color'],bs.inputs['Base Color'])
+    nt.links.new(noise.outputs['Fac'],bump.inputs['Height'])
+    nt.links.new(bump.outputs['Normal'],bs.inputs['Normal'])
+    nt.links.new(bs.outputs['BSDF'],out.inputs['Surface'])
+    return m
+
+def material_piso(name='Piso_Ceramico'):
+    m=bpy.data.materials.new(name); m.use_nodes=True
+    nt=m.node_tree; nt.nodes.clear()
+    out=nt.nodes.new('ShaderNodeOutputMaterial'); out.location=(600,0)
+    bs=nt.nodes.new('ShaderNodeBsdfPrincipled'); bs.location=(350,0)
+    inp(bs,'Roughness',.32); inp(bs,'Metallic',.08)
+    chk=nt.nodes.new('ShaderNodeTexChecker'); chk.location=(-170,40)
+    inp(chk,'Color1',(.025,.03,.038,1)); inp(chk,'Color2',(.12,.14,.16,1)); inp(chk,'Scale',18.0)
+    tc=nt.nodes.new('ShaderNodeTexCoord'); tc.location=(-420,40)
+    nt.links.new(tc.outputs['Generated'],chk.inputs['Vector'])
+    nt.links.new(chk.outputs['Color'],bs.inputs['Base Color'])
+    nt.links.new(bs.outputs['BSDF'],out.inputs['Surface'])
+    return m
+
 def maze():
-    clear(); sc=bpy.context.scene; sc.name='Laberinto_HDRI'; engine(sc); setup_world(sc)
-    sc['ACTIVIDAD']='Propuesta de laberinto con IMAGEN HDRI, como se solicita aprox. en el minuto 33'
-    wall=mixmat('Muros_MixShader',(.025,.10,.28,1),(.08,.58,1,1),.26,0,.76,.58,.18)
-    floor=principled('Piso',(.04,.05,.06,1),.15,.38)
-    ent=principled('Entrada',(.05,.8,.16,1),0,.25,(.05,.8,.16,1),4); sal=principled('Salida',(1,.10,.02,1),0,.25,(1,.06,.01,1),4); white=principled('Texto',(1,1,1,1),0,.4)
+    clear(); sc=bpy.context.scene; sc.name='Laberinto_HDRI_Materiales'; engine(sc); setup_world(sc)
+    sc['ACTIVIDAD']='Laberinto con IMAGEN HDRI y diferentes tipos de materiales'
+    sc['MATERIALES']='Concreto rugoso, madera veteada, metal pulido, ladrillo y marmol'
+
+    concreto=material_concreto()
+    madera=material_madera()
+    metal=material_metal()
+    ladrillo=material_ladrillo()
+    marmol=material_marmol()
+    materiales=[concreto,madera,metal,ladrillo,marmol]
+
+    floor=material_piso()
+    ent=principled('Entrada',(.05,.8,.16,1),0,.25,(.05,.8,.16,1),4)
+    sal=principled('Salida',(1,.10,.02,1),0,.25,(1,.06,.01,1),4)
+    white=principled('Texto',(1,1,1,1),0,.4)
+
     w,h=9,7; cell=2.15; th=.18; wh=2.45; tx=w*cell; ty=h*cell
-    box('Piso',(0,0,-.10),(tx+2.2,ty+2.2,.2),floor,.06)
+    box('Piso_Ceramico',(0,0,-.10),(tx+2.2,ty+2.2,.2),floor,.06)
     D=maze_data(w,h)
+
+    def pickmat(x,y,ori):
+        oi={'N':0,'S':1,'E':2,'W':3}.get(ori,0)
+        return materiales[(x*2+y*3+oi)%len(materiales)]
+
+    def wallobj(prefix,x,y,ori,loc,dims):
+        mat=pickmat(x,y,ori)
+        safe=mat.name.replace(' ','_')
+        return box(f'{prefix}{x}_{y}_{safe}',loc,dims,mat,.04)
+
     for y in range(h):
         for x in range(w):
             cx=(x-(w-1)/2)*cell; cy=(y-(h-1)/2)*cell; z=wh/2; d=D[(x,y)]
-            if d['N']: box(f'N{x}_{y}',(cx,cy+cell/2,z),(cell+th,th,wh),wall)
-            if d['W']: box(f'W{x}_{y}',(cx-cell/2,cy,z),(th,cell+th,wh),wall)
-            if y==0 and d['S']: box(f'S{x}_{y}',(cx,cy-cell/2,z),(cell+th,th,wh),wall)
-            if x==w-1 and d['E']: box(f'E{x}_{y}',(cx+cell/2,cy,z),(th,cell+th,wh),wall)
+            if d['N']: wallobj('N',x,y,'N',(cx,cy+cell/2,z),(cell+th,th,wh))
+            if d['W']: wallobj('W',x,y,'W',(cx-cell/2,cy,z),(th,cell+th,wh))
+            if y==0 and d['S']: wallobj('S',x,y,'S',(cx,cy-cell/2,z),(cell+th,th,wh))
+            if x==w-1 and d['E']: wallobj('E',x,y,'E',(cx+cell/2,cy,z),(th,cell+th,wh))
+
     entrance=(-tx/2-1.15,-(h-1)/2*cell,.55); exitp=(tx/2+1.15,(h-1)/2*cell,.55)
     for nm,p,m in [('ENTRADA',entrance,ent),('SALIDA',exitp,sal)]:
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=32,ring_count=16,radius=.42,location=p); bpy.context.object.name=nm; bpy.context.object.data.materials.append(m)
-    text_obj('LABERINTO HDRI',(0,-ty/2-1.55,.03),white,.62)
-    area((-7,-6,12),(0,0,0),1500,8,(1,.82,.67)); area((8,6,10),(0,0,1),1000,7,(.55,.72,1)); sun()
-    c=camera(sc,(18,-22,20),(0,0,.9),48)
-    path=os.path.join(OUT,'02_Laberinto_HDRI.blend'); save(path)
-    render(sc,c,(18,-22,20),(0,0,.9),'05_laberinto_diagonal.png',48)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=32,ring_count=16,radius=.42,location=p)
+        bpy.context.object.name=nm; bpy.context.object.data.materials.append(m)
+
+    # Muestras visibles de materiales fuera del laberinto.
+    labels=[('CONCRETO',concreto),('MADERA',madera),('METAL',metal),('LADRILLO',ladrillo),('MARMOL',marmol)]
+    sx=-6.0
+    for i,(label,mat) in enumerate(labels):
+        x=sx+i*3.0
+        box('Muestra_'+label,(x,-ty/2-2.15,.38),(1.45,.85,.75),mat,.08)
+        t=text_obj(label,(x,-ty/2-2.72,.02),white,.28)
+        t.rotation_euler=(0,0,0)
+
+    text_obj('LABERINTO HDRI - MULTIMATERIAL',(0,-ty/2-3.55,.03),white,.54)
+    area((-7,-6,12),(0,0,0),1650,8,(1,.82,.67))
+    area((8,6,10),(0,0,1),1150,7,(.55,.72,1))
+    sun()
+
+    c=camera(sc,(18,-22,20),(0,-.6,.9),48)
+    path=os.path.join(OUT,'02_Laberinto_HDRI.blend')
+    save(path)
+    render(sc,c,(18,-22,20),(0,-.6,.9),'05_laberinto_diagonal.png',48)
     render(sc,c,(0,-1,30),(0,0,0),'06_laberinto_superior.png',52)
     render(sc,c,(-16,-14,7),(0,-1,1),'07_laberinto_entrada.png',52)
     render(sc,c,(16,14,8),(0,1,1),'08_laberinto_salida.png',52)
+    render(sc,c,(0,-20,6),(0,-ty/2-1.5,.5),'09_muestras_materiales.png',55)
     save(path)
 
 try:
