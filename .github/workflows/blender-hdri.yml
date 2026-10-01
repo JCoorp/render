@@ -12,16 +12,15 @@ jobs:
       LIBGL_ALWAYS_SOFTWARE: "1"
     steps:
       - uses: actions/checkout@v4
-      - name: Instalar Blender y librerias graficas
+      - name: Descargar Blender portable 4.0.2
         run: |
-          sudo apt-get update
-          sudo apt-get install -y blender libegl1 libgl1 libgl1-mesa-dri libglx-mesa0 mesa-vulkan-drivers
-          ldconfig -p | grep -E 'libEGL.so.1|libGL.so.1' || true
-          blender --version
+          curl -L --retry 4 --retry-delay 2 -o blender.tar.xz https://download.blender.org/release/Blender4.0/blender-4.0.2-linux-x64.tar.xz
+          tar -xf blender.tar.xz
+          ./blender-4.0.2-linux-x64/blender --version
       - name: Generar blends y evidencias
         run: |
           mkdir -p blender_hdri_activity/output
-          blender --background --python blender_hdri_activity/generar.py -- --output blender_hdri_activity/output
+          ./blender-4.0.2-linux-x64/blender --background --python blender_hdri_activity/generar.py -- --output blender_hdri_activity/output
           ls -lh blender_hdri_activity/output
       - name: Empaquetar entrega
         run: |
