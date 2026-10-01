@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import bpy, math, os, sys, random
+import bpy, math, os, sys, random, urllib.request
 from mathutils import Vector
 
 def arg(flag, default):
@@ -10,7 +10,7 @@ def arg(flag, default):
 
 OUT=os.path.abspath(arg("--output", os.path.join(os.getcwd(),"output")))
 os.makedirs(OUT, exist_ok=True)
-HDRI=os.path.join(OUT,"campus_sintetico.hdr")
+HDRI=os.path.join(OUT,"stadium_01_1k.hdr")\nHDRI_URL="https://dl.polyhaven.org/file/ph-assets/HDRIs/hdr/1k/stadium_01_1k.hdr"
 
 # ------------------------------------------------------------
 # HDRI real en formato Radiance RGBE
