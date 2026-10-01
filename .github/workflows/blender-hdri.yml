@@ -12,8 +12,9 @@ jobs:
       LIBGL_ALWAYS_SOFTWARE: "1"
     steps:
       - uses: actions/checkout@v4
-      - name: Descargar Blender portable 4.0.2
+      - name: Preparar libreria EGL y Blender portable 4.0.2
         run: |
+          sudo apt-get install -y --no-install-recommends libegl1 libgl1
           curl -L --retry 4 --retry-delay 2 -o blender.tar.xz https://download.blender.org/release/Blender4.0/blender-4.0.2-linux-x64.tar.xz
           tar -xf blender.tar.xz
           ./blender-4.0.2-linux-x64/blender --version
