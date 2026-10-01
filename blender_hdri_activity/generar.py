@@ -10,7 +10,60 @@ def arg(flag, default):
 
 OUT=os.path.abspath(arg("--output", os.path.join(os.getcwd(),"output")))
 os.makedirs(OUT, exist_ok=True)
+HDRI=os.path.join(OUT,"campus_sintetico.hdr")
 
+# ------------------------------------------------------------
+# HDRI real en formato Radiance RGBE
+# ------------------------------------------------------------
+def rgbe(r,g,b):
+    v=max(r,g,b)
+    if v < 1e-32: return (0,0,0,0)
+    m,e=math.frexp(v)
+    s=(m*256.0)/v
+    return (max(0,min(255,int(r*s))), max(0,min(255,int(g*s))), max(0,min(255,int(b*s))), max(0,min(255,e+128)))
+
+def rle_channel(f,vals):
+    i=0
+    while i<len(vals):
+        n=min(128,len(vals)-i)
+        f.write(bytes([n])); f.write(bytes(vals[i:i+n])); i+=n
+
+def make_hdri(path,w=512,h=256):
+    sun_lon=math.radians(35); sun_lat=math.radians(26)
+    with open(path,"wb") as f:
+        f.write(b"#?RADIANCE\n")
+        f.write(b"# HDRI sintetica para actividad Blender Mix Shader\n")
+        f.write(b"FORMAT=32-bit_rle_rgbe\n\n")
+        f.write(f"-Y {h} +X {w}\n".encode("ascii"))
+        for y in range(h):
+            lat=math.pi/2-(y+.5)/h*math.pi
+            row=[]
+            for x in range(w):
+                lon=(x+.5)/w*2*math.pi-math.pi
+                if lat>=0:
+                    t=max(0,min(1,lat/(math.pi/2)))
+                    r=(.74*(1-t)+.16*t)*1.65
+                    g=(.84*(1-t)+.42*t)*1.65
+                    b=(1.00*(1-t)+1.30*t)*1.65
+                else:
+                    t=max(0,min(1,-lat/(math.pi/2)))
+                    wave=.07*(.5+.5*math.sin(lon*5))
+                    r=.18+.13*t+wave
+                    g=.32+.08*(1-t)+wave*.55
+                    b=.10+.05*(1-t)
+                ca=math.sin(lat)*math.sin(sun_lat)+math.cos(lat)*math.cos(sun_lat)*math.cos(lon-sun_lon)
+                ang=math.acos(max(-1,min(1,ca)))
+                if ang<math.radians(2.5):
+                    k=1-ang/math.radians(2.5)
+                    r+=32*k; g+=28*k; b+=20*k
+                row.append(rgbe(r,g,b))
+            f.write(bytes([2,2,(w>>8)&255,w&255]))
+            for c in range(4): rle_channel(f,[p[c] for p in row])
+    print("HDRI creada",path)
+
+# ------------------------------------------------------------
+# Helpers Blender
+# ------------------------------------------------------------
 def clear():
     bpy.ops.object.select_all(action='SELECT'); bpy.ops.object.delete(use_global=False)
 
@@ -25,13 +78,13 @@ def engine(sc):
         try: sc.view_settings.look='Medium High Contrast'
         except: pass
 
-def inp(node, names, value):
+def inp(node,names,value):
     if isinstance(names,str): names=[names]
     for n in names:
         if node.inputs.get(n):
             node.inputs[n].default_value=value; return
 
-def principled(name, color, metal=0, rough=.5, emit=None, estr=0):
+def principled(name,color,metal=0,rough=.5,emit=None,estr=0):
     m=bpy.data.materials.new(name); m.use_nodes=True
     nt=m.node_tree; nt.nodes.clear()
     o=nt.nodes.new('ShaderNodeOutputMaterial'); o.location=(320,0)
@@ -56,24 +109,19 @@ def mixmat(name,a,b,fac=.3,ma=0,mb=.8,ra=.55,rb=.18):
     return m
 
 def setup_world(sc):
-    w=bpy.data.worlds.new('Mundo_HDRI_Procedural') if not bpy.data.worlds else bpy.data.worlds[0]
+    w=bpy.data.worlds.new('Mundo_HDRI') if not bpy.data.worlds else bpy.data.worlds[0]
     sc.world=w; w.use_nodes=True
     nt=w.node_tree; nt.nodes.clear()
     out=nt.nodes.new('ShaderNodeOutputWorld'); out.location=(600,0)
-    bg=nt.nodes.new('ShaderNodeBackground'); bg.location=(360,0); bg.inputs['Strength'].default_value=.55
-    # Fondo panoramico de alto contraste tipo HDRI usando nodos de mundo.
-    tex=nt.nodes.new('ShaderNodeTexCoord'); tex.location=(-650,0)
-    sep=nt.nodes.new('ShaderNodeSeparateXYZ'); sep.location=(-430,0)
-    ramp=nt.nodes.new('ShaderNodeValToRGB'); ramp.location=(-180,0)
-    ramp.color_ramp.elements[0].position=.20; ramp.color_ramp.elements[0].color=(.06,.11,.03,1)
-    ramp.color_ramp.elements[1].position=.70; ramp.color_ramp.elements[1].color=(.18,.48,1.0,1)
-    sun=nt.nodes.new('ShaderNodeTexGradient'); sun.gradient_type='RADIAL'; sun.location=(-180,-180)
-    nt.links.new(tex.outputs['Generated'],sep.inputs['Vector'])
-    nt.links.new(sep.outputs['Z'],ramp.inputs['Fac'])
-    nt.links.new(ramp.outputs['Color'],bg.inputs['Color']); nt.links.new(bg.outputs['Background'],out.inputs['Surface'])
+    bg=nt.nodes.new('ShaderNodeBackground'); bg.location=(360,0); bg.inputs['Strength'].default_value=.58
+    env=nt.nodes.new('ShaderNodeTexEnvironment'); env.location=(80,0); env.name='IMAGEN_HDRI'; env.label='IMAGEN HDRI'
+    env.image=bpy.data.images.load(HDRI,check_existing=True)
+    tc=nt.nodes.new('ShaderNodeTexCoord'); tc.location=(-180,0)
+    nt.links.new(tc.outputs['Generated'],env.inputs['Vector'])
+    nt.links.new(env.outputs['Color'],bg.inputs['Color']); nt.links.new(bg.outputs['Background'],out.inputs['Surface'])
     return w
 
-def box(name, loc, dims, mat, bevel=.04):
+def box(name,loc,dims,mat,bevel=.04):
     bpy.ops.mesh.primitive_cube_add(location=loc); o=bpy.context.object; o.name=name; o.dimensions=dims
     bpy.ops.object.transform_apply(location=False,rotation=False,scale=True)
     if bevel:
@@ -105,7 +153,7 @@ def save(path):
 
 def practice():
     clear(); sc=bpy.context.scene; sc.name='Practica_MixShader_HDRI'; engine(sc); setup_world(sc)
-    sc['ACTIVIDAD']='Practica docente: materiales, Mix Shader y ambiente HDRI'
+    sc['ACTIVIDAD']='Practica docente: materiales, Mix Shader e IMAGEN HDRI'
     floor=mixmat('Cobre_MixShader',(.32,.06,.015,1),(.9,.32,.025,1),.42,0,.95,.5,.13)
     blue=mixmat('Suzanne_MixShader',(.015,.04,.42,1),(.03,.25,1,1),.38,0,.88,.35,.10)
     green=principled('Verde',(.08,.74,.37,1),.08,.25)
@@ -143,9 +191,9 @@ def maze_data(w=9,h=7,seed=33):
 
 def maze():
     clear(); sc=bpy.context.scene; sc.name='Laberinto_HDRI'; engine(sc); setup_world(sc)
-    sc['ACTIVIDAD']='Propuesta de laberinto con ambiente HDRI, como se solicita aprox. en el minuto 33'
+    sc['ACTIVIDAD']='Propuesta de laberinto con IMAGEN HDRI, como se solicita aprox. en el minuto 33'
     wall=mixmat('Muros_MixShader',(.025,.10,.28,1),(.08,.58,1,1),.26,0,.76,.58,.18)
-    floor=principled('Piso',(.04,.05,.06,1),.15,.38); edge=principled('Marco',(.015,.015,.02,1),.8,.18)
+    floor=principled('Piso',(.04,.05,.06,1),.15,.38)
     ent=principled('Entrada',(.05,.8,.16,1),0,.25,(.05,.8,.16,1),4); sal=principled('Salida',(1,.10,.02,1),0,.25,(1,.06,.01,1),4); white=principled('Texto',(1,1,1,1),0,.4)
     w,h=9,7; cell=2.15; th=.18; wh=2.45; tx=w*cell; ty=h*cell
     box('Piso',(0,0,-.10),(tx+2.2,ty+2.2,.2),floor,.06)
@@ -170,5 +218,6 @@ def maze():
     render(sc,c,(16,14,8),(0,1,1),'08_laberinto_salida.png',52)
     save(path)
 
+make_hdri(HDRI)
 practice(); maze()
 print("LISTO", sorted(os.listdir(OUT)))
